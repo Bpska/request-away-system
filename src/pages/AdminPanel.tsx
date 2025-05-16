@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLeave } from "@/contexts/LeaveContext";
@@ -87,13 +86,13 @@ const AdminPanel = () => {
                       <Button
                         variant="outline"
                         className="border-leave-rejected text-leave-rejected hover:bg-leave-rejected/10"
-                        onClick={() => handleOpenDialog(leave.id, "reject")}
+                        onClick={() => handleOpenDialog(leave.id, "rejected")}
                       >
                         Reject
                       </Button>
                       <Button
                         className="bg-leave-approved hover:bg-leave-approved/80"
-                        onClick={() => handleOpenDialog(leave.id, "approve")}
+                        onClick={() => handleOpenDialog(leave.id, "approved")}
                       >
                         Approve
                       </Button>
