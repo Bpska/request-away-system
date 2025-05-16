@@ -21,7 +21,7 @@ const AdminPanel = () => {
   const { user } = useAuth();
   const { allLeaves, updateLeave } = useLeave();
   const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
-  const [action, setAction] = useState<"approve" | "reject" | null>(null);
+  const [action, setAction] = useState<"approved" | "rejected" | null>(null);
   const [comments, setComments] = useState("");
   
   // Only admins can access this page
@@ -33,7 +33,7 @@ const AdminPanel = () => {
   const approvedLeaves = allLeaves.filter(leave => leave.status === "approved");
   const rejectedLeaves = allLeaves.filter(leave => leave.status === "rejected");
   
-  const handleOpenDialog = (leaveId: string, action: "approve" | "reject") => {
+  const handleOpenDialog = (leaveId: string, action: "approved" | "rejected") => {
     setSelectedLeaveId(leaveId);
     setAction(action);
     setComments("");
@@ -165,10 +165,10 @@ const AdminPanel = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {action === "approve" ? "Approve Leave Request" : "Reject Leave Request"}
+              {action === "approved" ? "Approve Leave Request" : "Reject Leave Request"}
             </DialogTitle>
             <DialogDescription>
-              {action === "approve"
+              {action === "approved"
                 ? "Are you sure you want to approve this leave request?"
                 : "Are you sure you want to reject this leave request?"}
             </DialogDescription>
@@ -193,9 +193,9 @@ const AdminPanel = () => {
             </Button>
             <Button
               onClick={handleConfirmAction}
-              className={action === "approve" ? "bg-leave-approved" : "bg-leave-rejected"}
+              className={action === "approved" ? "bg-leave-approved" : "bg-leave-rejected"}
             >
-              {action === "approve" ? "Approve" : "Reject"}
+              {action === "approved" ? "Approve" : "Reject"}
             </Button>
           </DialogFooter>
         </DialogContent>
