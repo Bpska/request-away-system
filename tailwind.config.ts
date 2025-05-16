@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom colors for our leave system
+				leave: {
+					'primary': '#1a73e8',
+					'secondary': '#4285f4',
+					'light': '#f5f7fa',
+					'dark': '#202124',
+					'gray': '#f1f3f4',
+					'pending': '#f9a825',
+					'approved': '#43a047',
+					'rejected': '#e53935'
 				}
 			},
 			borderRadius: {
