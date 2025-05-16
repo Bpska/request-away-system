@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LeaveProvider } from "@/contexts/LeaveContext";
 
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import AuthLayout from "./components/AuthLayout";
 import Dashboard from "./pages/Dashboard";
 import LeaveApplicationForm from "./pages/LeaveApplicationForm";
@@ -28,6 +29,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
               <Route element={<AuthLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/apply" element={<LeaveApplicationForm />} />

@@ -1,12 +1,13 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User } from "@/types";
-import { findUserByEmail } from "@/lib/mock-data";
+import { User, UserRole } from "@/types";
+import { findUserByEmail, users } from "@/lib/mock-data";
 import { toast } from "@/components/ui/use-toast";
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, role: UserRole, department?: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -66,6 +67,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const register = async (name: string, email: string, role: UserRole, department?: string): Promise<boolean> => {
+    setIsLoading(true);
+    
+    try {
+      // In a real app, this would call an API to register the user
+      // For this demo, we'll simulate success but not actually store new users
+      
+      // Check if user already exists
+      const existingUser = findUserByEmail(email);
+      if (existingUser) {
+        toast({
+          title: "Registration Failed",
+          description: "A user with this email already exists.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Create mock user (in a real app, this would be saved to a database)
+      const newUser: User = {
+        id: `user${users.length + 1}`,
+        name,
+        email,
+        role,
+        department: department || undefined,
+      };
+      
+      if (role === 'student') {
+        newUser.studentId = `ST${Math.floor(10000 + Math.random() * 90000)}`;
+      } else if (role === 'faculty') {
+        newUser.facultyId = `FAC${Math.floor(100 + Math.random() * 900)}`;
+      }
+      
+      // In a real app, we would add the user to the database here
+      // For this demo, we'll just log in with the new user data
+      setUser(newUser);
+      localStorage.setItem("user", JSON.stringify(newUser));
+      
+      toast({
+        title: "Registration Successful",
+        description: `Welcome, ${name}!`,
+      });
+      
+      return true;
+    } catch (error) {
+      toast({
+        title: "Registration Error",
+        description: "An error occurred during registration.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
@@ -76,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
