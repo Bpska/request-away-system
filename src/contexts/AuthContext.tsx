@@ -7,7 +7,7 @@ import { toast } from "@/components/ui/use-toast";
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, role: UserRole, department?: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string, role: UserRole, department?: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -129,40 +129,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, role: UserRole, department?: string): Promise<boolean> => {
+  const register = async (name: string, email: string, password: string, role: UserRole, department?: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
-      // For demo purposes, we'll just look up users from the existing database
-      // In a real app with proper authentication, we would create new users
-      const { data: existingUser, error: lookupError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
-        
-      if (lookupError && lookupError.code !== 'PGRST116') {
-        // PGRST116 means no rows returned, which is expected for new users
+      // First, create the auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name,
+            role: role,
+            department: department
+          }
+        }
+      });
+      
+      if (authError) {
         toast({
           title: "Registration Failed",
-          description: "Error checking existing users.",
+          description: authError.message,
           variant: "destructive",
         });
         return false;
       }
       
-      if (existingUser) {
-        // If user exists, try to sign in with that email (for demo purposes)
-        // In a real app, we would notify that the user already exists
-        return await login(email, "any-password-for-demo");
+      if (authData.user) {
+        // Then insert the user profile data
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            name: name,
+            email: email,
+            role: role,
+            department: department,
+            student_id: role === 'student' ? `ST${Math.floor(10000 + Math.random() * 90000)}` : null,
+            faculty_id: role === 'faculty' ? `FAC${Math.floor(1000 + Math.random() * 9000)}` : null
+          });
+          
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          toast({
+            title: "Account Creation Issue",
+            description: "Your account was created but profile setup failed. Please contact support.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        toast({
+          title: "Registration Successful",
+          description: "Your account has been created!",
+        });
+        return true;
       }
-      
-      // This is a demo app, so we'll allow "registration" by just logging in
-      // with any of the pre-created users in the database
-      toast({
-        title: "Demo Mode",
-        description: "In this demo, please use one of the pre-created users.",
-      });
       
       return false;
     } catch (error) {

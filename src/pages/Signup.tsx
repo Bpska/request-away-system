@@ -7,18 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UserRole } from "@/types";
 
 const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<"student" | "faculty" | "admin">("student");
+  const [role, setRole] = useState<UserRole>("student");
   const [department, setDepartment] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,28 +35,11 @@ const Signup = () => {
       return;
     }
 
-    // In a real app, this would call an API to register the user
-    // For this demo, we'll simulate a delay and then auto-login
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Registration successful!",
-        description: "Your account has been created.",
-      });
-
-      // Auto-login after signup
-      const success = await login(email, password);
+      const success = await register(name, email, password, role, department);
       if (success) {
         navigate("/dashboard");
       }
-    } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: "There was a problem creating your account.",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +123,7 @@ const Signup = () => {
                   <label htmlFor="role" className="text-sm font-medium">
                     Role
                   </label>
-                  <Select value={role} onValueChange={(value) => setRole(value as any)}>
+                  <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>

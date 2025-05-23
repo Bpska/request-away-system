@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ const Login = () => {
   const [demoUsers, setDemoUsers] = useState<{id: string, name: string, email: string, role: string}[]>([]);
 
   // Fetch demo users from Supabase
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchDemoUsers = async () => {
       const { data, error } = await supabase
         .from('users')
@@ -39,7 +39,8 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      const success = await login(email, "demo-password");
+      // Use the actual password for real authentication
+      const success = await login(email, password);
       if (success) {
         navigate("/dashboard");
       }
@@ -86,12 +87,11 @@ const Login = () => {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Enter any password for demo"
+                    placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
-                  <p className="text-xs text-gray-500">For demo, any password works</p>
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Signing in..." : "Sign In"}
@@ -121,7 +121,6 @@ const Login = () => {
                   </li>
                 ))}
               </ul>
-              <p className="mt-2 text-xs text-center">For demo purposes, any password will work</p>
             </div>
           </CardFooter>
         </Card>
