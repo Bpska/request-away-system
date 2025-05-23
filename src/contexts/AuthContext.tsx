@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, UserRole } from "@/types";
-import { findUserByEmail, users } from "@/lib/mock-data";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
 interface AuthContextType {
@@ -19,43 +19,105 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is stored in localStorage
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Check for existing session when component mounts
+    const checkSession = async () => {
+      setIsLoading(true);
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // Fetch user profile data
+          const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (error) {
+            console.error("Error fetching user data:", error);
+            setUser(null);
+          } else if (data) {
+            setUser({
+              id: data.id,
+              name: data.name,
+              email: data.email,
+              role: data.role,
+              department: data.department || undefined,
+              studentId: data.student_id || undefined,
+              facultyId: data.faculty_id || undefined
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // Fetch user profile when signed in
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (data && !error) {
+          setUser({
+            id: data.id,
+            name: data.name,
+            email: data.email,
+            role: data.role,
+            department: data.department || undefined,
+            studentId: data.student_id || undefined,
+            facultyId: data.faculty_id || undefined
+          });
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+    });
+
+    checkSession();
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      // In a real app, password would be validated on server
-      // For this demo, we'll just check if the user exists by email
-      // and assume any password is valid
-      const foundUser = findUserByEmail(email);
-      
-      if (foundUser) {
-        setUser(foundUser);
-        localStorage.setItem("user", JSON.stringify(foundUser));
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${foundUser.name}!`,
-        });
-        return true;
-      } else {
+      if (error) {
         toast({
           title: "Login Failed",
-          description: "Invalid email or password.",
+          description: error.message,
           variant: "destructive",
         });
         return false;
       }
+      
+      if (data.user) {
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+        return true;
+      }
+      
+      return false;
     } catch (error) {
+      console.error("Login error:", error);
       toast({
         title: "Login Error",
         description: "An error occurred during login.",
@@ -71,50 +133,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      // In a real app, this would call an API to register the user
-      // For this demo, we'll simulate success but not actually store new users
-      
-      // Check if user already exists
-      const existingUser = findUserByEmail(email);
-      if (existingUser) {
+      // For demo purposes, we'll just look up users from the existing database
+      // In a real app with proper authentication, we would create new users
+      const { data: existingUser, error: lookupError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+        
+      if (lookupError && lookupError.code !== 'PGRST116') {
+        // PGRST116 means no rows returned, which is expected for new users
         toast({
           title: "Registration Failed",
-          description: "A user with this email already exists.",
+          description: "Error checking existing users.",
           variant: "destructive",
         });
         return false;
       }
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Create mock user (in a real app, this would be saved to a database)
-      const newUser: User = {
-        id: `user${users.length + 1}`,
-        name,
-        email,
-        role,
-        department: department || undefined,
-      };
-      
-      if (role === 'student') {
-        newUser.studentId = `ST${Math.floor(10000 + Math.random() * 90000)}`;
-      } else if (role === 'faculty') {
-        newUser.facultyId = `FAC${Math.floor(100 + Math.random() * 900)}`;
+      if (existingUser) {
+        // If user exists, try to sign in with that email (for demo purposes)
+        // In a real app, we would notify that the user already exists
+        return await login(email, "any-password-for-demo");
       }
       
-      // In a real app, we would add the user to the database here
-      // For this demo, we'll just log in with the new user data
-      setUser(newUser);
-      localStorage.setItem("user", JSON.stringify(newUser));
-      
+      // This is a demo app, so we'll allow "registration" by just logging in
+      // with any of the pre-created users in the database
       toast({
-        title: "Registration Successful",
-        description: `Welcome, ${name}!`,
+        title: "Demo Mode",
+        description: "In this demo, please use one of the pre-created users.",
       });
       
-      return true;
+      return false;
     } catch (error) {
+      console.error("Registration error:", error);
       toast({
         title: "Registration Error",
         description: "An error occurred during registration.",
@@ -126,13 +178,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error("Sign out error:", error);
+      toast({
+        title: "Logout Error",
+        description: "An error occurred during logout.",
+        variant: "destructive",
+      });
+    } else {
+      setUser(null);
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+    }
   };
 
   return (

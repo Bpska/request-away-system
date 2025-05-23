@@ -5,19 +5,46 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { users } from "@/lib/mock-data";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, isLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
+  const [demoUsers, setDemoUsers] = useState<{id: string, name: string, email: string, role: string}[]>([]);
+
+  // Fetch demo users from Supabase
+  React.useEffect(() => {
+    const fetchDemoUsers = async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, email, role')
+        .limit(5);
+        
+      if (error) {
+        console.error("Error fetching demo users:", error);
+      } else if (data) {
+        setDemoUsers(data);
+      }
+    };
+    
+    fetchDemoUsers();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(email, password);
-    if (success) {
-      navigate("/dashboard");
+    setIsLoading(true);
+    
+    try {
+      const success = await login(email, "demo-password");
+      if (success) {
+        navigate("/dashboard");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -59,11 +86,12 @@ const Login = () => {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder="Enter any password for demo"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
+                  <p className="text-xs text-gray-500">For demo, any password works</p>
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Signing in..." : "Sign In"}
@@ -83,7 +111,7 @@ const Login = () => {
             <div className="text-sm text-gray-500 mt-4">
               <p className="font-semibold">Demo Accounts:</p>
               <ul className="mt-2 space-y-1">
-                {users.map(user => (
+                {demoUsers.map(user => (
                   <li key={user.id} className="flex justify-between">
                     <span>{user.name} ({user.role})</span>
                     <span className="text-leave-primary cursor-pointer" 

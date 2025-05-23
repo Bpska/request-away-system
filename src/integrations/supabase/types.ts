@@ -9,7 +9,99 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      leave_requests: {
+        Row: {
+          comments: string | null
+          created_at: string
+          end_date: string
+          id: string
+          reason: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          start_date: string
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          reason: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date: string
+          status?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date?: string
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string
+          department: string | null
+          email: string
+          faculty_id: string | null
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["user_role"]
+          student_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          email: string
+          faculty_id?: string | null
+          id?: string
+          name: string
+          role: Database["public"]["Enums"]["user_role"]
+          student_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          email?: string
+          faculty_id?: string | null
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          student_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +110,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role: "student" | "faculty" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +225,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["student", "faculty", "admin"],
+    },
   },
 } as const
