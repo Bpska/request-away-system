@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-          // Fetch user profile data
+          // Fetch user profile data from our users table
           const { data, error } = await supabase
             .from('users')
             .select('*')
@@ -58,6 +58,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.email);
+      
       if (event === 'SIGNED_IN' && session) {
         // Fetch user profile when signed in
         const { data, error } = await supabase
@@ -133,17 +135,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      // First, create the auth user
+      // First, create the auth user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            name: name,
-            role: role,
-            department: department
-          }
-        }
       });
       
       if (authError) {
@@ -156,18 +151,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (authData.user) {
-        // Then insert the user profile data
+        // Then insert the user profile data into our users table
+        const userData = {
+          id: authData.user.id,
+          name: name,
+          email: email,
+          role: role,
+          department: department || null,
+          student_id: role === 'student' ? `ST${Math.floor(10000 + Math.random() * 90000)}` : null,
+          faculty_id: role === 'faculty' ? `FAC${Math.floor(1000 + Math.random() * 9000)}` : null
+        };
+
         const { error: profileError } = await supabase
           .from('users')
-          .insert({
-            id: authData.user.id,
-            name: name,
-            email: email,
-            role: role,
-            department: department,
-            student_id: role === 'student' ? `ST${Math.floor(10000 + Math.random() * 90000)}` : null,
-            faculty_id: role === 'faculty' ? `FAC${Math.floor(1000 + Math.random() * 9000)}` : null
-          });
+          .insert(userData);
           
         if (profileError) {
           console.error("Profile creation error:", profileError);
@@ -181,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         toast({
           title: "Registration Successful",
-          description: "Your account has been created!",
+          description: "Your account has been created! Please check your email to verify your account.",
         });
         return true;
       }
